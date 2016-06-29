@@ -27,6 +27,8 @@ import org.apache.samza.task.MessageCollector;
 import org.apache.samza.task.StreamTask;
 import org.apache.samza.task.TaskCoordinator;
 import samza.examples.wikipedia.system.WikipediaFeed.WikipediaFeedEvent;
+import java.util.List;
+import java.util.ArrayList;
 
 /**
  * This task is very simple. All it does is take messages that it receives, and
@@ -35,9 +37,20 @@ import samza.examples.wikipedia.system.WikipediaFeed.WikipediaFeedEvent;
 public class WikipediaFeedStreamTask implements StreamTask {
   private static final SystemStream OUTPUT_STREAM = new SystemStream("kafka", "wikipedia-raw");
 
+  // Avoids using Thread.sleep since that interferes with Samza's internals.
+  // Instead, just performs a slow (~ 5 secs) operation.
+  private static void sleep()
+  {
+    List<String> coll = new ArrayList<String>();
+    for (int i = 0; i < 250000; ++i) {
+      coll.add(0, "" + i);
+    }
+    System.out.println(coll.size());
+  }
+
   @Override
   public void process(IncomingMessageEnvelope envelope, MessageCollector collector, TaskCoordinator coordinator) {
-    Map<String, Object> outgoingMap = WikipediaFeedEvent.toMap((WikipediaFeedEvent) envelope.getMessage());
-    collector.send(new OutgoingMessageEnvelope(OUTPUT_STREAM, outgoingMap));
+    collector.send(new OutgoingMessageEnvelope(OUTPUT_STREAM, envelope.getMessage()));
+    sleep(); // simulates the message taking a while to process
   }
 }
